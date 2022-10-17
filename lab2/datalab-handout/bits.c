@@ -1,4 +1,5 @@
-/* 
+
+/*
  * CS:APP Data Lab 
  * 
  * <Please put your name and userid here>
@@ -19,6 +20,7 @@
  *
  * STEP 1: Read the following instructions carefully.
  */
+
 
 You will provide your solution to the Data Lab by
 editing the collection of functions in this source file.
@@ -143,7 +145,7 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+    return ~((~(x&(~y))) & (~((~x)&y)));
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -153,7 +155,7 @@ int bitXor(int x, int y) {
  */
 int tmin(void) {
 
-  return 2;
+  return 128 << 24;
 
 }
 //2
@@ -165,7 +167,7 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+  return !(~((x + 1 + !(x + 1)) ^ x));
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -175,8 +177,13 @@ int isTmax(int x) {
  *   Max ops: 12
  *   Rating: 2
  */
+//  *1*1*1*1   ->1    **1*1*1*    ~    --0-0-0-
+//  1*1*1*1*   ->1    11*1*1*1    ~    00-0-0-0
+
 int allOddBits(int x) {
-  return 2;
+    int y = 0x55 + (0x55 << 8);
+    int z = y + (y << 16);
+    return !(~(x|z));
 }
 /* 
  * negate - return -x 
@@ -186,10 +193,13 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return (~x) + 1;
 }
+
 //3
-/* 
+/*     00110000   00110001  00110010  00110011  00110100  00110101  00110110   00110111  00111000   00111001
+ *      0000--1001    0001 1010     0010 1011     0011 1100    0100 1101     0101 1110     0110 1111
+ *      0000    0001
  * isAsciiDigit - return 1 if 0x30 <= x <= 0x39 (ASCII codes for characters '0' to '9')
  *   Example: isAsciiDigit(0x35) = 1.
  *            isAsciiDigit(0x3a) = 0.
@@ -199,7 +209,7 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  return (!((x+(~48+1))>>1)) ^ (!(((x+(~48+1))-2)>>3));
 }
 /* 
  * conditional - same as x ? y : z 
@@ -209,7 +219,9 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+    int a = !x;
+    int b = ~a;
+    return (((b + 1)&z) + ((((b + 1)^y)&y)));
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -219,7 +231,22 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+
+    return (((x^y) >> 31)&(~(x>>31) + 2)) + (((x^y) >> 31)|(!((~x+1+y) >> 31)));
+    // 分两种情况，x y同号和x y异号（把0与正都看作正数）
+    // 用 (x^y) >> 31 将其区分开，同号是0，异号是-1
+    // 分为两种处理方式，同号的处理方式与异号的处理方式
+    // 同号的处理方式与 (x^y) >> 31 或，异号的处理方式与 (x^y) >> 31 与
+    // 所以如果x y同号，(x^y) >> 31为0，和异号的处理方式返回值 与 结果为0，和同号的处理方式返回值 或 结果还是同号的处理方式返回值。
+    //                                                  与和或完后相加，结果是同号处理方式返回值
+    //    如果x y异号，(x^y) >> 31为-1，和异号的处理方式返回值 与 结果仍为异号的处理方式返回值，和同号的处理方式 或 结果为-1。
+    //                                                  相加后，结果是异号处理方式返回值-1
+    // 综上所述，要求同号处理方式当 x <= y 时返回1，否则返回0
+    //            异号处理方式当 x <= y 时返回2，否则返回1
+    // 同号处理方式思路：计算 y-x 的符号：(!((~x+1+y) >> 31))
+    // 异号处理方式思路：计算 x 的符号：(~(x>>31) + 2)
+
+
 }
 //4
 /* 
@@ -231,8 +258,11 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  return !(~(x^(~0)));
 }
+// x^(~0)    0  --->   11...1    ~   00...0    !    1
+//           A  --->   10...1    ~   01...0    !    0
+
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
  *  Examples: howManyBits(12) = 5
@@ -246,7 +276,21 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+    int sign=x>>31;
+    x = (sign&~x)|(~sign&x);
+    int b16 = !!(x>>16)<<4;
+    x = x>>b16;
+    int b8 = !!(x>>8)<<3;
+    x = x>>b8;
+    int b4 = !!(x>>4)<<2;
+    x = x>>b4;
+    int b2 = !!(x>>2)<<1;
+    x = x>>b2;
+    int b1 = !!(x>>1);
+    x = x>>b1;
+    int b0 = x;
+    return b16+b8+b4+b2+b1+b0+1;
+
 }
 //float
 /* 
@@ -261,7 +305,41 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+    unsigned x = uf >> 23;    // 阶码 + 符号
+    unsigned y = 255;
+    unsigned z = x & y;       // 阶码
+    unsigned t = (uf << 9) >> 9;    // 尾数
+    if ((uf << 1) == 0) return uf;
+    if (z == 255u) return uf;
+    if (z != 0)
+    {
+        if (z == 254)
+        {
+            return (x + 1) << 23;
+        }
+        else
+        {
+            return uf + (1 << 23);
+        }
+    }
+    else
+    {
+        if ((t >> 22) != 1)
+        {
+            t = t << 1;
+            return (x << 23) + t;
+        }
+        else
+        {
+            // 需要进位
+            t = t << 1;
+            t = t - (1 << 23);
+            x = x + 1;
+            return (x << 23) + t;
+        }
+    }
+
+
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -275,8 +353,31 @@ unsigned floatScale2(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
+
 int floatFloat2Int(unsigned uf) {
-  return 2;
+    unsigned x = uf >> 23;    // 阶码 + 符号
+    unsigned y = 255;
+    unsigned z = x & y;       // 阶码
+    unsigned m = uf >> 31;      // 符号
+    if ((uf << 1) == 0) return 0;
+    if (z == 255u) return 0x80000000u;
+    if (z != 0)
+    {
+        if (m == 0)  // +
+        {
+            if (z < 127) return 0;
+            else if (z >= 158) return 0x80000000u;
+            else return (1 << (z-127));
+        }
+        else
+        {
+            if (z < 127) return 0;
+            else if (z > 158) return 0x80000000u;
+            else return -(1 << (z-127));
+        }
+    }
+    else return 0;
+
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -292,5 +393,8 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+    if (x > 127) return (255u << 23);
+    else if (x >= -126) return (unsigned)((x + 127) << 23);
+    else if (x > -150) return (1 << (149 + x));
+    else return 0u;
 }
